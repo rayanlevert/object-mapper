@@ -1,0 +1,7 @@
+services:
+  app:
+    build: .
+    restart: 'no'
+    working_dir: /app
+    volumes:
+      - .:/app
