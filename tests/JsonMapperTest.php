@@ -8,6 +8,30 @@ use ReflectionProperty;
 
 class JsonMapperTest extends \PHPUnit\Framework\TestCase
 {
+    public function testNoConstructNoProperty(): void
+    {
+        $o = new class()
+        {
+        };
+
+        $oMapped = ObjectMapper::fromJSON('{}', $o::class);
+
+        $this->assertInstanceOf($o::class, $oMapped);
+    }
+
+    public function testNoConstructOneRequiredProperty(): void
+    {
+        $o = new class()
+        {
+            protected int $id;
+        };
+
+        $oMapped = ObjectMapper::fromJSON('{"id": 11}', $o::class);
+
+        $this->assertInstanceOf($o::class, $oMapped);
+        $this->assertFalse((new ReflectionProperty($oMapped, 'id'))->isInitialized($oMapped));
+    }
+
     public function testOneOptionalNotInJsonConstructor(): void
     {
         $o = new class()
@@ -61,7 +85,9 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
             {
             }
 
-            public function get(): string{}
+            public function get(): string
+            {
+            }
         };
 
         $oMapped = ObjectMapper::fromJSON('{}', $o::class);

@@ -48,10 +48,10 @@ class ObjectMapper
         try {
             $oReflectionClass = new ReflectionClass($mappedClass);
 
+            $aArgs = [];
+
             // 1st step -> we get the properties from the constructor and instanciate it
             if ($oReflectionClass->hasMethod('__construct')) {
-                $aArgs = [];
-
                 foreach ($oReflectionClass->getMethod('__construct')->getParameters() as $oParameter) {
                     $parameterName = $oParameter->getName();
 
@@ -73,12 +73,12 @@ class ObjectMapper
 
                     $aArgs[] = $oParameter->getDefaultValue();
                 }
-
-                return $oReflectionClass->newInstanceArgs($aArgs);
             }
         } catch (ReflectionException $e) {
             throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
+
+        return $oReflectionClass->newInstanceArgs($aArgs);
     }
 
     /**
