@@ -84,10 +84,6 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
             public function __construct(protected $id = 10)
             {
             }
-
-            public function get(): string
-            {
-            }
         };
 
         $oMapped = ObjectMapper::fromJSON('{}', $o::class);
@@ -143,5 +139,78 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
 
         $this->assertSame('valueA', $o->getProperty('a')->getValue($oMapped));
         $this->assertSame(11, $o->getProperty('b')->getValue($oMapped));
+    }
+
+    public function testOnePropertyWithSetterWrongType(): void
+    {
+        $o = new class('a')
+        {
+            protected string $a = '';
+
+            public function __construct()
+            {
+            }
+
+            public function setA(int $value): void
+            {
+                $this->a = $value;
+            }
+        };
+
+        $this->expectExceptionMessage('Setter method setA has incorrect argument type for its property a');
+
+        ObjectMapper::fromJSON('{"a": "valueA", "b": 11}', $o::class);
+    }
+
+    public function testOnePropertyWithSetterNotConstruct(): void
+    {
+        $o = new class('a')
+        {
+            protected string $a = '';
+
+            public function __construct()
+            {
+            }
+
+            public function setA(string $value): void
+            {
+                $this->a = $value;
+            }
+
+            public function getA(): string
+            {
+                return $this->a;
+            }
+        };
+
+        $o = ObjectMapper::fromJSON('{"a": "valueA", "b": 11}', $o::class);
+
+        $this->assertInstanceOf($o::class, $o);
+        $this->assertSame('valueA', $o->getA());
+    }
+
+    public function testOnePropertyWithSetterConstruct(): void
+    {
+        $o = new class('a')
+        {
+            public function __construct(protected string $a = '')
+            {
+            }
+
+            public function setA(string $value): void
+            {
+                $this->a = 'test';
+            }
+
+            public function getA(): string
+            {
+                return $this->a;
+            }
+        };
+
+        $o = ObjectMapper::fromJSON('{"a": "valueA", "b": 11}', $o::class);
+
+        $this->assertInstanceOf($o::class, $o);
+        $this->assertSame('valueA', $o->getA());
     }
 }

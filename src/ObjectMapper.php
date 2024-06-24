@@ -5,6 +5,7 @@ namespace RayanLevert\ObjectMapper;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionParameter;
+use ReflectionProperty;
 use stdClass;
 
 use function json_decode;
@@ -12,6 +13,7 @@ use function is_string;
 use function class_exists;
 use function json_last_error_msg;
 use function property_exists;
+use function ucfirst;
 
 /**
  * Object mapping class from different sources of data
@@ -47,38 +49,67 @@ class ObjectMapper
 
         try {
             $oReflectionClass = new ReflectionClass($mappedClass);
-
-            $aArgs = [];
-
-            // 1st step -> we get the properties from the constructor and instanciate it
-            if ($oReflectionClass->hasMethod('__construct')) {
-                foreach ($oReflectionClass->getMethod('__construct')->getParameters() as $oParameter) {
-                    $parameterName = $oParameter->getName();
-
-                    // Verifies the type of the constructor preventing TypeError from PHP
-                    if (property_exists($json, $parameterName)) {
-                        if (!self::isTypeValid($oParameter, $json->$parameterName)) {
-                            throw new Exception("Parameter '$parameterName' has the the wrong type from JSON.");
-                        }
-
-                        $aArgs[] = $json->$parameterName;
-
-                        continue;
-                    }
-
-                    // Property doesn't exist from JSON and is required by the constructor -> exception
-                    if (!$oParameter->isOptional()) {
-                        throw new Exception("Required parameter '$parameterName' is not found from JSON.");
-                    }
-
-                    $aArgs[] = $oParameter->getDefaultValue();
-                }
-            }
         } catch (ReflectionException $e) {
             throw new Exception($e->getMessage(), $e->getCode(), $e);
         }
 
-        return $oReflectionClass->newInstanceArgs($aArgs);
+        $aArgs = [];
+
+        // 1st step -> we get the properties from the constructor and instanciate it
+        if ($oReflectionClass->hasMethod('__construct')) {
+            foreach ($oReflectionClass->getMethod('__construct')->getParameters() as $oParameter) {
+                $parameterName = $oParameter->getName();
+
+                // Verifies the type of the constructor preventing TypeError from PHP
+                if (property_exists($json, $parameterName)) {
+                    if (!self::isTypeValid($oParameter, $json->$parameterName)) {
+                        throw new Exception("Parameter '$parameterName' has the the wrong type from JSON.");
+                    }
+
+                    $aArgs[$parameterName] = $json->$parameterName;
+
+                    continue;
+                }
+
+                // Property doesn't exist from JSON and is required by the constructor -> exception
+                if (!$oParameter->isOptional()) {
+                    throw new Exception("Required parameter '$parameterName' is not found from JSON.");
+                }
+
+                $aArgs[] = $oParameter->getDefaultValue();
+            }
+        }
+
+        $instance = $oReflectionClass->newInstanceArgs($aArgs);
+
+        // 2nd step we check for setters after the constructor
+        foreach ($oReflectionClass->getProperties() as $oProperty) {
+            $parameterName = $oProperty->getName();
+
+            if (!property_exists($json, $parameterName)) {
+                continue;
+            } elseif (isset($aArgs[$parameterName])) {
+                // Skips already handled constructor arguments
+                continue;
+            } elseif (!$oReflectionClass->hasMethod('set' . ucfirst($parameterName))) {
+                continue;
+            }
+
+            $oSetter = $oReflectionClass->getMethod('set' . ucfirst($parameterName));
+
+            if ($oSetter->getNumberOfParameters() < 1) {
+                continue;
+            } elseif (!self::isTypeValid($oSetter->getParameters()[0], $json->$parameterName)) {
+                throw new Exception(
+                    'Setter method set' . ucfirst($parameterName)
+                        . ' has incorrect argument type for its property ' . $parameterName
+                );
+            }
+
+            $instance->{"set" . ucfirst($parameterName)}($json->$parameterName);
+        }
+
+        return $instance;
     }
 
     /**
@@ -86,7 +117,7 @@ class ObjectMapper
      *
      * @todo Move to a trait after other data mappers are done
      */
-    private static function isTypeValid(ReflectionParameter $parameter, mixed $value): bool
+    private static function isTypeValid(ReflectionParameter|ReflectionProperty $parameter, mixed $value): bool
     {
         // No type specified -> the value can be of any type
         if (!$oType = $parameter->getType()) {
