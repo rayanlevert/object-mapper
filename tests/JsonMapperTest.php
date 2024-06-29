@@ -43,7 +43,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse((new ReflectionProperty($oMapped, 'id'))->isInitialized($oMapped));
     }
 
-    public function testOneOptionalNotInJsonConstructor(): void
+    public function testOneOptionalNotInConstructor(): void
     {
         $o = new class()
         {
@@ -58,7 +58,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertNull((new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
     }
 
-    public function testOneOptionalButInJsonConstructor(): void
+    public function testOneOptionalButInConstructor(): void
     {
         $o = new class()
         {
@@ -73,7 +73,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(11, (new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
     }
 
-    public function testOneOptionalButInJsonNoTypeConstructor(): void
+    public function testOneOptionalButInNoTypeConstructor(): void
     {
         $o = new class()
         {
@@ -88,7 +88,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame("testValue", (new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
     }
 
-    public function testOneOptionalNotInJsonNoTypeConstructor(): void
+    public function testOneOptionalNotInNoTypeConstructor(): void
     {
         $o = new class()
         {
@@ -103,7 +103,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame(10, (new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
     }
 
-    public function testOneOptionalButInJsonWrongTypeConstructor(): void
+    public function testOneOptionalButInWrongTypeConstructor(): void
     {
         $o = new class()
         {
@@ -117,7 +117,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         ObjectMapper::fromJSON('{"id": "valueTest"}', $o::class);
     }
 
-    public function testOneRequiredNotInJsonConstructor(): void
+    public function testOneRequiredNotInConstructor(): void
     {
         $o = new class(1)
         {
@@ -225,7 +225,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('valueA', $o->getA());
     }
 
-    public function testOnePropertyFromAttributeNoInJson(): void
+    public function testOnePropertyFromAttributeNoIn(): void
     {
         $o = new class(1)
         {
@@ -239,7 +239,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         ObjectMapper::fromJSON('{"valueType": "value"}', $o::class);
     }
 
-    public function testOnePropertyPromotedFromAttributeInJson(): void
+    public function testOnePropertyPromotedFromAttributeIn(): void
     {
         $o = new class(1)
         {
@@ -253,7 +253,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
     }
 
-    public function testOnePropertyFromAttributeInJson(): void
+    public function testOnePropertyFromAttributeIn(): void
     {
         $o = new class(1)
         {
@@ -271,7 +271,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
     }
 
-    public function testOnePropertyFromAttributeInJsonParameterNotSameTypo(): void
+    public function testOnePropertyFromAttributeInParameterNotSameTypo(): void
     {
         $o = new class(1)
         {
@@ -289,7 +289,7 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
         ObjectMapper::fromJSON('{"value_type": "value"}', $o::class);
     }
 
-    public function testOnePropertyFromAttributeInJsonSetter(): void
+    public function testOnePropertyFromAttributeInSetter(): void
     {
         $o = new class(1)
         {

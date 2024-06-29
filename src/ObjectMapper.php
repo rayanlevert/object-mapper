@@ -98,11 +98,15 @@ class ObjectMapper
             } elseif (isset($aArgs[$phpPropertyName])) {
                 // Skips already handled constructor arguments
                 continue;
-            } elseif (!$oReflectionClass->hasMethod('set' . ucfirst($phpPropertyName))) {
+            }
+
+            $setterName = 'set' . ucfirst($phpPropertyName);
+
+            if (!$oReflectionClass->hasMethod($setterName)) {
                 continue;
             }
 
-            $oSetter = $oReflectionClass->getMethod('set' . ucfirst($phpPropertyName));
+            $oSetter = $oReflectionClass->getMethod($setterName);
 
             if ($oSetter->getNumberOfParameters() < 1) {
                 continue;
@@ -113,7 +117,7 @@ class ObjectMapper
                 );
             }
 
-            $instance->{"set" . ucfirst($phpPropertyName)}($json->$parameterName);
+            $instance->{$setterName}($json->$parameterName);
         }
 
         return $instance;
