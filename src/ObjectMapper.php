@@ -64,7 +64,7 @@ class ObjectMapper
         // 1st step -> we get the properties from the constructor and instanciate it
         if ($oReflectionClass->hasMethod('__construct')) {
             foreach ($oReflectionClass->getMethod('__construct')->getParameters() as $oParameter) {
-                $parameterName = $oParameter->getName();
+                $parameterName = self::getPropertyName($oParameter);
 
                 // Verifies the type of the constructor preventing TypeError from PHP
                 if (property_exists($json, $parameterName)) {
@@ -72,7 +72,7 @@ class ObjectMapper
                         throw new Exception("Parameter '$parameterName' has the the wrong type from JSON.");
                     }
 
-                    $aArgs[$parameterName] = $json->$parameterName;
+                    $aArgs[$oParameter->getName()] = $json->$parameterName;
 
                     continue;
                 }
@@ -90,29 +90,30 @@ class ObjectMapper
 
         // 2nd step we check for setters after the constructor
         foreach ($oReflectionClass->getProperties() as $oProperty) {
-            $parameterName = $oProperty->getName();
+            $parameterName   = self::getPropertyName($oProperty);
+            $phpPropertyName = $oProperty->getName();
 
             if (!property_exists($json, $parameterName)) {
                 continue;
-            } elseif (isset($aArgs[$parameterName])) {
+            } elseif (isset($aArgs[$phpPropertyName])) {
                 // Skips already handled constructor arguments
                 continue;
-            } elseif (!$oReflectionClass->hasMethod('set' . ucfirst($parameterName))) {
+            } elseif (!$oReflectionClass->hasMethod('set' . ucfirst($phpPropertyName))) {
                 continue;
             }
 
-            $oSetter = $oReflectionClass->getMethod('set' . ucfirst($parameterName));
+            $oSetter = $oReflectionClass->getMethod('set' . ucfirst($phpPropertyName));
 
             if ($oSetter->getNumberOfParameters() < 1) {
                 continue;
             } elseif (!self::isTypeValid($oSetter->getParameters()[0], $json->$parameterName)) {
                 throw new Exception(
-                    'Setter method set' . ucfirst($parameterName)
+                    'Setter method set' . ucfirst($phpPropertyName)
                         . ' has incorrect argument type for its property ' . $parameterName
                 );
             }
 
-            $instance->{"set" . ucfirst($parameterName)}($json->$parameterName);
+            $instance->{"set" . ucfirst($phpPropertyName)}($json->$parameterName);
         }
 
         return $instance;
@@ -139,5 +140,26 @@ class ObjectMapper
             'bool', 'int', 'float' => "\is_$typeName"($value),
             default                => gettype($value) === $typeName
         };
+    }
+
+    /**
+     * Returns either the class property name, or if an attribute Property is found, from it
+     */
+    private static function getPropertyName(ReflectionParameter|ReflectionProperty $parameter): string
+    {
+        // Argument from a parameter, if not promoted we retrieve the PHP property
+        if ($parameter instanceof ReflectionParameter && !$parameter->isPromoted()) {
+            if (!$parameter->getDeclaringClass()->hasProperty($parameter->getName())) {
+                throw new Exception(
+                    "Argument name {$parameter->getName()} does not have its property"
+                );
+            }
+
+            $parameter = $parameter->getDeclaringClass()->getProperty($parameter->getName());
+        }
+
+        $oAttribute = $parameter->getAttributes(Property::class)[0] ?? null;
+
+        return $oAttribute?->getArguments()[0] ?: $parameter->getName();
     }
 }

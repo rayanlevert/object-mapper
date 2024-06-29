@@ -4,6 +4,7 @@ namespace RayanLevert\ObjectMapper\Tests;
 
 use Exception;
 use RayanLevert\ObjectMapper\ObjectMapper;
+use RayanLevert\ObjectMapper\Property;
 use ReflectionClass;
 use ReflectionProperty;
 
@@ -222,5 +223,94 @@ class JsonMapperTest extends \PHPUnit\Framework\TestCase
 
         $this->assertInstanceOf($o::class, $o);
         $this->assertSame('valueA', $o->getA());
+    }
+
+    public function testOnePropertyFromAttributeNoInJson(): void
+    {
+        $o = new class(1)
+        {
+            public function __construct(#[Property('value_type')] protected string $valueType)
+            {
+            }
+        };
+
+        $this->expectExceptionMessage('Required parameter \'value_type\' is not found from JSON');
+
+        ObjectMapper::fromJSON('{"valueType": "value"}', $o::class);
+    }
+
+    public function testOnePropertyPromotedFromAttributeInJson(): void
+    {
+        $o = new class(1)
+        {
+            public function __construct(#[Property('value_type')] protected string $valueType)
+            {
+            }
+        };
+
+        $o = ObjectMapper::fromJSON('{"value_type": "value"}', $o::class);
+
+        $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
+    }
+
+    public function testOnePropertyFromAttributeInJson(): void
+    {
+        $o = new class(1)
+        {
+            #[Property('value_type')]
+            protected string $valueType;
+
+            public function __construct(string $valueType)
+            {
+                $this->valueType = $valueType;
+            }
+        };
+
+        $o = ObjectMapper::fromJSON('{"value_type": "value"}', $o::class);
+
+        $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
+    }
+
+    public function testOnePropertyFromAttributeInJsonParameterNotSameTypo(): void
+    {
+        $o = new class(1)
+        {
+            #[Property('value_type')]
+            protected string $valueType;
+
+            public function __construct(string $valuetype)
+            {
+                $this->valueType = $valuetype;
+            }
+        };
+
+        $this->expectExceptionMessage('Argument name valuetype does not have its property');
+
+        ObjectMapper::fromJSON('{"value_type": "value"}', $o::class);
+    }
+
+    public function testOnePropertyFromAttributeInJsonSetter(): void
+    {
+        $o = new class(1)
+        {
+            #[Property('identifiant')]
+            protected int $id = 0;
+
+            public function __construct(#[Property('value_type')] protected string $valueType)
+            {
+            }
+
+            public function setId(int $id): self
+            {
+                $this->id = $id;
+
+                return $this;
+            }
+        };
+
+        $o = ObjectMapper::fromJSON('{"value_type": "value", "identifiant": 1}', $o::class);
+
+        $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
+        $this->assertSame(1, (new ReflectionProperty($o, 'id'))->getValue($o));
     }
 }
