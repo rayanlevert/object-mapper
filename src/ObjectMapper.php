@@ -53,6 +53,26 @@ class ObjectMapper
             );
         }
 
+        return self::stdClass('JSON', $json, $mappedClass);
+    }
+
+    /**
+     * Maps an object from a stdClass (PHP typecasting to object)
+     *
+     * @throws Exception If data is missing for the mapped class
+     */
+    public static function fromStdClass(stdClass $class, string|object $mappedClass): object
+    {
+        return self::stdClass('stdClass', $class, $mappedClass);
+    }
+
+    /**
+     * Maps an object from a stdClass (PHP typecasting to object)
+     *
+     * @throws Exception If data is missing for the mapped class
+     */
+    private static function stdClass(string $typeSource, stdClass $class, string|object $mappedClass): object
+    {
         try {
             $oReflectionClass = new ReflectionClass($mappedClass);
         } catch (ReflectionException $e) {
@@ -67,19 +87,19 @@ class ObjectMapper
                 $parameterName = self::getPropertyName($oParameter);
 
                 // Verifies the type of the constructor preventing TypeError from PHP
-                if (property_exists($json, $parameterName)) {
-                    if (!self::isTypeValid($oParameter, $json->$parameterName)) {
-                        throw new Exception("Parameter '$parameterName' has the the wrong type from JSON.");
+                if (property_exists($class, $parameterName)) {
+                    if (!self::isTypeValid($oParameter, $class->$parameterName)) {
+                        throw new Exception("Parameter '$parameterName' has the the wrong type from $typeSource.");
                     }
 
-                    $aArgs[$oParameter->getName()] = $json->$parameterName;
+                    $aArgs[$oParameter->getName()] = $class->$parameterName;
 
                     continue;
                 }
 
                 // Property doesn't exist from JSON and is required by the constructor -> exception
                 if (!$oParameter->isOptional()) {
-                    throw new Exception("Required parameter '$parameterName' is not found from JSON.");
+                    throw new Exception("Required parameter '$parameterName' is not found from $typeSource.");
                 }
 
                 $aArgs[] = $oParameter->getDefaultValue();
@@ -93,7 +113,7 @@ class ObjectMapper
             $parameterName   = self::getPropertyName($oProperty);
             $phpPropertyName = $oProperty->getName();
 
-            if (!property_exists($json, $parameterName)) {
+            if (!property_exists($class, $parameterName)) {
                 continue;
             } elseif (isset($aArgs[$phpPropertyName])) {
                 // Skips already handled constructor arguments
@@ -110,14 +130,14 @@ class ObjectMapper
 
             if ($oSetter->getNumberOfParameters() < 1) {
                 continue;
-            } elseif (!self::isTypeValid($oSetter->getParameters()[0], $json->$parameterName)) {
+            } elseif (!self::isTypeValid($oSetter->getParameters()[0], $class->$parameterName)) {
                 throw new Exception(
                     'Setter method set' . ucfirst($phpPropertyName)
                         . ' has incorrect argument type for its property ' . $parameterName
                 );
             }
 
-            $instance->{$setterName}($json->$parameterName);
+            $instance->{$setterName}($class->$parameterName);
         }
 
         return $instance;
