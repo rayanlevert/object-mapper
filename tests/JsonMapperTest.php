@@ -2,12 +2,22 @@
 
 namespace RayanLevert\ObjectMapper\Tests;
 
+use Exception;
 use RayanLevert\ObjectMapper\ObjectMapper;
 use ReflectionClass;
 use ReflectionProperty;
 
 class JsonMapperTest extends \PHPUnit\Framework\TestCase
 {
+    public function testNotAJson(): void
+    {
+        $this->expectExceptionObject(
+            new Exception('JSON data could not have been decoded (Syntax error).', 1)
+        );
+
+        ObjectMapper::fromJSON('not a json', new \stdClass());
+    }
+
     public function testNoConstructNoProperty(): void
     {
         $o = new class()

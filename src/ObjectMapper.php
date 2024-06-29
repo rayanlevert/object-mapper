@@ -22,6 +22,9 @@ use function ucfirst;
  */
 class ObjectMapper
 {
+    /** Exception code when a JSON string could not been decoded */
+    public const int JSON_INVALID = 1;
+
     /**
      * Maps an object from a JSON string
      *
@@ -44,7 +47,10 @@ class ObjectMapper
         if (!$json instanceof stdClass) {
             $error = json_last_error_msg();
 
-            throw new Exception('JSON data could not have been decoded' . ($error ? ", error message: $error" : '.'));
+            throw new Exception(
+                'JSON data could not have been decoded' . ($error ? " ($error)" : '') . '.',
+                self::JSON_INVALID
+            );
         }
 
         try {
