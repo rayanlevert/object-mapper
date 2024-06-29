@@ -6,9 +6,8 @@ use RayanLevert\ObjectMapper\ObjectMapper;
 use RayanLevert\ObjectMapper\Property;
 use ReflectionClass;
 use ReflectionProperty;
-use stdClass;
 
-class StdClassMapperTest extends \PHPUnit\Framework\TestCase
+class ArrayMapperTest extends \PHPUnit\Framework\TestCase
 {
     public function testNoConstructNoProperty(): void
     {
@@ -16,7 +15,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
         {
         };
 
-        $oMapped = ObjectMapper::fromStdClass(new stdClass(), $o::class);
+        $oMapped = ObjectMapper::fromArray([], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
     }
@@ -28,7 +27,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             protected int $id;
         };
 
-        $oMapped = ObjectMapper::fromStdClass((object) ['id' => 11], $o::class);
+        $oMapped = ObjectMapper::fromArray(['id' => 11], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
         $this->assertFalse((new ReflectionProperty($oMapped, 'id'))->isInitialized($oMapped));
@@ -43,7 +42,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $oMapped = ObjectMapper::fromStdClass(new stdClass(), $o::class);
+        $oMapped = ObjectMapper::fromArray([], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
         $this->assertNull((new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
@@ -58,7 +57,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $oMapped = ObjectMapper::fromStdClass((object) ['id' => 11], $o::class);
+        $oMapped = ObjectMapper::fromArray(['id' => 11], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
         $this->assertSame(11, (new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
@@ -73,7 +72,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $oMapped = ObjectMapper::fromStdClass((object) ['id' => 'testValue'], $o::class);
+        $oMapped = ObjectMapper::fromArray(['id' => 'testValue'], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
         $this->assertSame("testValue", (new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
@@ -88,7 +87,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $oMapped = ObjectMapper::fromStdClass(new stdClass(), $o::class);
+        $oMapped = ObjectMapper::fromArray([], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
         $this->assertSame(10, (new ReflectionProperty($oMapped, 'id'))->getValue($oMapped));
@@ -103,9 +102,9 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $this->expectExceptionMessage("Parameter 'id' has the the wrong type from stdClass.");
+        $this->expectExceptionMessage("Parameter 'id' has the the wrong type from array.");
 
-        ObjectMapper::fromStdClass((object) ['id' => 'valueTest'], $o::class);
+        ObjectMapper::fromArray(['id' => 'valueTest'], $o::class);
     }
 
     public function testOneRequiredNotInConstructor(): void
@@ -117,9 +116,9 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $this->expectExceptionMessage("Required parameter 'id' is not found from stdClass.");
+        $this->expectExceptionMessage("Required parameter 'id' is not found from array.");
 
-        ObjectMapper::fromStdClass((object) ['test' => 'valueTest'], $o::class);
+        ObjectMapper::fromArray(['test' => 'valueTest'], $o::class);
     }
 
     public function testTwoPropertiesSameNameAndType(): void
@@ -133,7 +132,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $oMapped = ObjectMapper::fromStdClass((object) ['a' => 'valueA', 'b' => 11], $o::class);
+        $oMapped = ObjectMapper::fromArray(['a' => 'valueA', 'b' => 11], $o::class);
 
         $this->assertInstanceOf($o::class, $oMapped);
 
@@ -161,7 +160,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
 
         $this->expectExceptionMessage('Setter method setA has incorrect argument type for its property a');
 
-        ObjectMapper::fromStdClass((object) ['a' => 'valueA', 'b' => 11], $o::class);
+        ObjectMapper::fromArray(['a' => 'valueA', 'b' => 11], $o::class);
     }
 
     public function testOnePropertyWithSetterNotConstruct(): void
@@ -185,7 +184,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $o = ObjectMapper::fromStdClass((object) ['a' => 'valueA', 'b' => 11], $o::class);
+        $o = ObjectMapper::fromArray(['a' => 'valueA', 'b' => 11], $o::class);
 
         $this->assertInstanceOf($o::class, $o);
         $this->assertSame('valueA', $o->getA());
@@ -210,7 +209,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $o = ObjectMapper::fromStdClass((object) ['a' => 'valueA', 'b' => 11], $o::class);
+        $o = ObjectMapper::fromArray(['a' => 'valueA', 'b' => 11], $o::class);
 
         $this->assertInstanceOf($o::class, $o);
         $this->assertSame('valueA', $o->getA());
@@ -225,9 +224,9 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $this->expectExceptionMessage('Required parameter \'value_type\' is not found from stdClass');
+        $this->expectExceptionMessage('Required parameter \'value_type\' is not found from array');
 
-        ObjectMapper::fromStdClass((object) ['valueType' => 'value'], $o::class);
+        ObjectMapper::fromArray(['valueType' => 'value'], $o::class);
     }
 
     public function testOnePropertyPromotedFromAttributeIn(): void
@@ -239,7 +238,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $o = ObjectMapper::fromStdClass((object) ['value_type' => 'value'], $o::class);
+        $o = ObjectMapper::fromArray(['value_type' => 'value'], $o::class);
 
         $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
     }
@@ -257,7 +256,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $o = ObjectMapper::fromStdClass((object) ['value_type' => 'value'], $o::class);
+        $o = ObjectMapper::fromArray(['value_type' => 'value'], $o::class);
 
         $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
     }
@@ -277,7 +276,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
 
         $this->expectExceptionMessage('Argument name valuetype does not have its property');
 
-        ObjectMapper::fromStdClass((object) ['value_type' => 'value'], $o::class);
+        ObjectMapper::fromArray(['value_type' => 'value'], $o::class);
     }
 
     public function testOnePropertyFromAttributeInSetter(): void
@@ -299,7 +298,7 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
             }
         };
 
-        $o = ObjectMapper::fromStdClass((object) ['value_type' => 'value', 'identifiant' => 1], $o::class);
+        $o = ObjectMapper::fromArray(['value_type' => 'value', 'identifiant' => 1], $o::class);
 
         $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
         $this->assertSame(1, (new ReflectionProperty($o, 'id'))->getValue($o));

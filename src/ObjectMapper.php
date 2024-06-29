@@ -67,6 +67,18 @@ class ObjectMapper
     }
 
     /**
+     * Maps an object from an array
+     *
+     * @param array<string, mixed> $array Array data
+     *
+     * @throws Exception If data is missing for the mapped class
+     */
+    public static function fromArray(array $array, string|object $mappedClass): object
+    {
+        return self::stdClass('array', (object) $array, $mappedClass);
+    }
+
+    /**
      * Maps an object from a stdClass (PHP typecasting to object)
      *
      * @throws Exception If data is missing for the mapped class
