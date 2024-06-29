@@ -2,10 +2,13 @@
 
 namespace RayanLevert\ObjectMapper;
 
+use LogicException;
 use ReflectionClass;
 use ReflectionException;
+use ReflectionNamedType;
 use ReflectionParameter;
 use ReflectionProperty;
+use ReflectionUnionType;
 use stdClass;
 
 use function json_decode;
@@ -16,7 +19,7 @@ use function property_exists;
 use function ucfirst;
 
 /**
- * Object mapping class from different sources of data
+ * Object mapping class from different sources of data using Reflection
  *
  * Has only static methods trying to map data to a PHP user defined class
  */
@@ -169,9 +172,28 @@ class ObjectMapper
             return true;
         }
 
-        $typeName = $oType->getName();
+        if ($oType instanceof ReflectionNamedType) {
+            return self::assertType($oType->getName(), $value);
+        }
 
-        // Correlation with gettype/built-in type function
+        if ($oType instanceof ReflectionUnionType) {
+            foreach ($oType->getTypes() as $oType) {
+                if (self::assertType($oType->getName(), $value)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        throw new LogicException('Intersection types are not handled yet.');
+    }
+
+    /**
+     * Verifies a value is of type (name from built-in argument type)
+     */
+    private static function assertType(string $typeName, mixed $value): bool
+    {
         return match ($typeName) {
             'bool', 'int', 'float' => "\is_$typeName"($value),
             'false'                => $value === false,

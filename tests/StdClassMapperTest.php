@@ -346,4 +346,24 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
 
         $this->assertTrue((new ReflectionProperty($o, 'id'))->getValue($o));
     }
+
+    public function testUnionType(): void
+    {
+        $o = new class('identfiant')
+        {
+            public function __construct(protected string|int $id)
+            {
+            }
+        };
+
+        $o = ObjectMapper::fromStdClass((object) ['id' => 'string-value'], $o::class);
+        $this->assertSame('string-value', (new ReflectionProperty($o, 'id'))->getValue($o));
+
+        $o = ObjectMapper::fromStdClass((object) ['id' => 20], $o::class);
+        $this->assertSame(20, (new ReflectionProperty($o, 'id'))->getValue($o));
+
+        $this->expectExceptionMessage("Parameter 'id' has the the wrong type from stdClass.");
+
+        ObjectMapper::fromStdClass((object) ['id' => 89.0], $o::class);
+    }
 }
