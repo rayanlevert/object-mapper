@@ -304,4 +304,46 @@ class StdClassMapperTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('value', (new ReflectionProperty($o, 'valueType'))->getValue($o));
         $this->assertSame(1, (new ReflectionProperty($o, 'id'))->getValue($o));
     }
+
+    public function testNoConstructOneFalseTypeNotFalse(): void
+    {
+        $o = new class(false)
+        {
+            public function __construct(protected false $id)
+            {
+            }
+        };
+
+        $this->expectExceptionMessage("Parameter 'id' has the the wrong type from stdClass.");
+
+        ObjectMapper::fromStdClass((object) ['id' => true], $o::class);
+    }
+
+    public function testNoConstructOneFalseTypeFalse(): void
+    {
+        $o = new class(false)
+        {
+            public function __construct(protected false $id)
+            {
+            }
+        };
+
+        $o = ObjectMapper::fromStdClass((object) ['id' => false], $o::class);
+
+        $this->assertFalse((new ReflectionProperty($o, 'id'))->getValue($o));
+    }
+
+    public function testNoConstructOneTrueTypeTrue(): void
+    {
+        $o = new class(true)
+        {
+            public function __construct(protected true $id)
+            {
+            }
+        };
+
+        $o = ObjectMapper::fromStdClass((object) ['id' => true], $o::class);
+
+        $this->assertTrue((new ReflectionProperty($o, 'id'))->getValue($o));
+    }
 }

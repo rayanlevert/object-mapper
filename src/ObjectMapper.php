@@ -171,9 +171,11 @@ class ObjectMapper
 
         $typeName = $oType->getName();
 
-        // Correlation with gettype/built-in type function (todo: false/true)
+        // Correlation with gettype/built-in type function
         return match ($typeName) {
             'bool', 'int', 'float' => "\is_$typeName"($value),
+            'false'                => $value === false,
+            'true'                 => $value === true,
             default                => gettype($value) === $typeName
         };
     }
